@@ -84,6 +84,7 @@ jobs:
     runs-on: ubuntu-22.04
     env:
       USE_NINJA: "1"
+      WASM2C_CFLAGS: "-march=x86-64-v2" # currently required for SIMDe to pass some tests on x86-64
     strategy:
       matrix:
         sanitizer: [asan, ubsan]
