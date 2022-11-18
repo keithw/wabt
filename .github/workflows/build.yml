@@ -87,6 +87,7 @@ jobs:
     strategy:
       matrix:
         type: [debug, release]
+      WASM2C_CFLAGS: "-march=x86-64-v2" # currently required for SIMDe to pass some tests on x86-64
     steps:
     - uses: actions/setup-python@v1
       with:
@@ -106,6 +107,7 @@ jobs:
     strategy:
       matrix:
         type: [debug, release]
+      WASM2C_CFLAGS: "-march=x86-64-v2" # currently required for SIMDe to pass some tests on x86-64
     steps:
     - uses: actions/setup-python@v1
       with:
