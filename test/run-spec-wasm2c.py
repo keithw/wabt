@@ -441,7 +441,7 @@ def main(args):
     default_compiler = 'cc'
     if IS_WINDOWS:
         default_compiler = 'cl.exe'
-    default_compiler = os.getenv('CC', default_compiler)
+    default_compiler = os.getenv('WASM2C_CC', os.getenv('CC', default_compiler))
     parser = argparse.ArgumentParser()
     parser.add_argument('-o', '--out-dir', metavar='PATH',
                         help='output directory for files.')
