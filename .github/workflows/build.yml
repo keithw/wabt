@@ -100,6 +100,23 @@ jobs:
     - run: make clang-${{ matrix.type }}-${{ matrix.sanitizer }}
     - run: make test-clang-${{ matrix.type }}-${{ matrix.sanitizer }}
 
+  build-wasm2c-memchecked:
+    name: wasm2c-memchecked
+    runs-on: ubuntu-22.04
+    env:
+      USE_NINJA: "1"
+      WASM2C_CFLAGS: "-march=x86-64-v2 -DWASM_RT_MEMCHECK_SIGNAL_HANDLER=0"
+    steps:
+    - uses: actions/setup-python@v1
+      with:
+        python-version: '3.x'
+    - uses: actions/checkout@v1
+      with:
+        submodules: true
+    - run: sudo apt-get install ninja-build
+    - run: make clang-release-asan
+    - run: make test-clang-release-asan
+
   build-min-cmake:
     name: min-cmake
     runs-on: ubuntu-latest
