@@ -113,6 +113,7 @@ test_big_endian(WABT_BIG_ENDIAN)
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
   set(WABT_DEBUG 1)
+  set(WASM2C_CFLAGS "${WASM2C_CFLAGS} -g -O0")
 endif ()
 
 configure_file(src/config.h.in include/wabt/config.h @ONLY)
@@ -205,6 +206,7 @@ function(sanitizer NAME FLAGS)
     set(USE_SANITIZER TRUE PARENT_SCOPE)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${FLAGS}" PARENT_SCOPE)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${FLAGS}" PARENT_SCOPE)
+    set(WASM2C_CFLAGS "${WASM2C_CFLAGS} ${FLAGS}" PARENT_SCOPE)
   endif ()
 endfunction()
 sanitizer(USE_ASAN "-fsanitize=address")
@@ -653,7 +655,7 @@ if (BUILD_TESTS)
   set(RUN_TESTS_PY ${WABT_SOURCE_DIR}/test/run-tests.py)
 
   add_custom_target(run-tests
-    COMMAND ${PYTHON_EXECUTABLE} ${RUN_TESTS_PY} --bindir $<TARGET_FILE_DIR:wat2wasm>
+    COMMAND ${CMAKE_COMMAND} -E env WASM2C_CC=${CMAKE_C_COMPILER} WASM2C_CFLAGS=${WASM2C_CFLAGS} ${PYTHON_EXECUTABLE} ${RUN_TESTS_PY} --bindir $<TARGET_FILE_DIR:wat2wasm>
     DEPENDS ${WABT_EXECUTABLES}
     WORKING_DIRECTORY ${WABT_SOURCE_DIR}
     USES_TERMINAL
