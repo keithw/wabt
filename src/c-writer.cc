@@ -1466,9 +1466,9 @@ void CWriter::WriteDataInitializers() {
     Write("LOAD_DATA(", ExternalInstanceRef(memory->name), ", ");
     WriteInitExpr(data_segment->offset);
     if (data_segment->data.empty()) {
-      Write(", NULL, 0");
+      Write(", true, NULL, 0");
     } else {
-      Write(", data_segment_data_", GlobalName(data_segment->name), ", ",
+      Write(", false, data_segment_data_", GlobalName(data_segment->name), ", ",
             data_segment->data.size());
     }
     Write(");", Newline());
@@ -2522,9 +2522,9 @@ void CWriter::Write(const ExprList& exprs) {
         const DataSegment* src_data = module_->GetDataSegment(inst->var);
         Write("memory_init(", ExternalInstancePtr(dest_memory->name), ", ");
         if (src_data->data.empty()) {
-          Write("NULL, 0");
+          Write("true, NULL, 0");
         } else {
-          Write("data_segment_data_", GlobalName(src_data->name), ", ");
+          Write("false, data_segment_data_", GlobalName(src_data->name), ", ");
           if (is_droppable(src_data)) {
             Write("(", "instance->data_segment_dropped_",
                   GlobalName(src_data->name), " ? 0 : ", src_data->data.size(),
