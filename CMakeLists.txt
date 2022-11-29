@@ -116,6 +116,10 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
   set(WASM2C_CFLAGS "${WASM2C_CFLAGS} -g -O0")
 endif ()
 
+if (DEFINED CMAKE_OSX_SYSROOT)
+  set(WASM2C_CFLAGS "${WASM2C_CFLAGS} -isysroot ${CMAKE_OSX_SYSROOT}")
+endif ()
+
 configure_file(src/config.h.in include/wabt/config.h @ONLY)
 
 
