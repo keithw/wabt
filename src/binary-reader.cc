@@ -121,9 +121,9 @@ class BinaryReader {
                                          const char* desc);
   [[nodiscard]] Result ReadIndex(Index* index, const char* desc);
   [[nodiscard]] Result ReadOffset(Offset* offset, const char* desc);
-  [[nodiscard]] Result ReadAlignment(Address* align_log2, const char* desc);
-  [[nodiscard]] Result CheckAlignment(Address* align_log2, const char* desc);
-  [[nodiscard]] Result TakeHasMemidx(Address* align_log2, bool* has_memidx);
+  [[nodiscard]] Result ReadAlignment(Address* align_log2,
+                                     bool* has_memidx,
+                                     const char* desc);
   [[nodiscard]] Result ReadMemidx(Index* memidx, const char* desc);
   [[nodiscard]] Result ReadMemLocation(Address* alignment_log2,
                                        Index* memidx,
@@ -431,27 +431,22 @@ Result BinaryReader::ReadOffset(Offset* offset, const char* desc) {
   return Result::Ok;
 }
 
-Result BinaryReader::ReadAlignment(Address* alignment_log2, const char* desc) {
+Result BinaryReader::ReadAlignment(Address* alignment_log2,
+                                   bool* has_memidx,
+                                   const char* desc) {
   uint32_t value;
   CHECK_RESULT(ReadU32Leb128(&value, desc));
-  *alignment_log2 = value;
-  return Result::Ok;
-}
 
-Result BinaryReader::CheckAlignment(Address* align_log2, const char* desc) {
-  uint32_t value = *align_log2;
+  // extract the has_memidx flag, then clear it
+  *has_memidx = (value >> 6) & 1;
+  value &= ~(1 << 6);
+
   if (value >= 32) {
     PrintError("invalid %s: %" PRIu32, desc, value);
     return Result::Error;
   }
-  return Result::Ok;
-}
 
-Result BinaryReader::TakeHasMemidx(Address* align_log2, bool* has_memidx) {
-  // extract the has_memidx flag
-  *has_memidx = (*align_log2 >> 6) & 1;
-  // then clear it
-  *align_log2 &= ~(1 << 6);
+  *alignment_log2 = value;
   return Result::Ok;
 }
 
@@ -468,9 +463,7 @@ Result BinaryReader::ReadMemLocation(Address* alignment_log2,
                                      const char* desc_offset,
                                      uint8_t* lane_val) {
   bool has_memidx = false;
-  CHECK_RESULT(ReadAlignment(alignment_log2, desc_align));
-  CHECK_RESULT(TakeHasMemidx(alignment_log2, &has_memidx));
-  CHECK_RESULT(CheckAlignment(alignment_log2, desc_align));
+  CHECK_RESULT(ReadAlignment(alignment_log2, &has_memidx, desc_align));
   *memidx = 0;
   if (has_memidx) {
     ERROR_IF(!options_.features.multi_memory_enabled(),
@@ -2279,11 +2272,13 @@ Result BinaryReader::ReadLinkingSection(Offset section_size) {
         CALLBACK(OnSegmentInfoCount, count);
         for (Index i = 0; i < count; i++) {
           std::string_view name;
+          bool has_memidx;
           Address alignment_log2;
           uint32_t flags;
           CHECK_RESULT(ReadStr(&name, "segment name"));
-          CHECK_RESULT(ReadAlignment(&alignment_log2, "segment alignment"));
-          CHECK_RESULT(CheckAlignment(&alignment_log2, "segment alignment"));
+          CHECK_RESULT(
+              ReadAlignment(&alignment_log2, &has_memidx, "segment alignment"));
+          ERROR_IF(has_memidx, "memory index not allowed in segment alignment");
           CHECK_RESULT(ReadU32Leb128(&flags, "segment flags"));
           CALLBACK(OnSegmentInfo, i, name, alignment_log2, flags);
         }
